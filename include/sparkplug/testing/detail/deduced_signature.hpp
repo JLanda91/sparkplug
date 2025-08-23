@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sparkplug/mocking/mock_signature.hpp>
+#include <sparkplug/mocking/signature.hpp>
 
 namespace sparkplug::testing::detail {
 
@@ -25,7 +25,7 @@ namespace sparkplug::testing::detail {
 
     public:
         static constexpr bool value = true;
-        using type = mocking::MockSignature<input_t, return_t>;
+        using type = mocking::Signature<input_t, return_t>;
     };
 
 }

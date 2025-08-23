@@ -1,22 +1,16 @@
 #pragma once
 
 namespace sparkplug::testing {
-    template<class T, bool IsMock>
+    template<class T, bool IsDeviceSide>
     struct Backend {
         using type = T;
-        static constexpr bool is_mock = IsMock;
+        static constexpr bool is_device_side = IsDeviceSide;
     };
 
     template<class T>
-    using RealBackend = Backend<T, false>;
+    using HostBackend = Backend<T, false>;
 
     template<class T>
-    using MockBackend = Backend<T, true>;
-
-    template<typename T>
-    class Widget {
-
-    };
-
+    using DeviceBackend = Backend<T, true>;
 
 }

@@ -15,6 +15,8 @@ set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 # ===== BUILD RULES =====
 add_library(sparkplug STATIC
         src/cuda_error.cu
+        src/cuda_stream.cu
+        src/device_properties.cu
 )
 target_compile_features(sparkplug PUBLIC cxx_std_17)
 target_link_libraries(sparkplug PUBLIC

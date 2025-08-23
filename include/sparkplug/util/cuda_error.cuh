@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <string_view>
 
-namespace sparkplug::testing {
+namespace sparkplug::util {
     struct cuda_error : std::runtime_error {
         cudaError_t code;
 

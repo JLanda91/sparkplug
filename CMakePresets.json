@@ -14,7 +14,7 @@
       "hidden": true,
       "toolchainFile": "/home/jasper/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "VCPKG_MANIFEST_INSTALL": "ON",
+        "VCPKG_MANIFEST_INSTALL": "OFF",
         "CMAKE_VERBOSE_MAKEFILE": "OFF"
       }
     },
