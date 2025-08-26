@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.31)
 
 project(Sandbox LANGUAGES CXX CUDA)
 
-find_package(fmt CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 
 
@@ -22,7 +21,6 @@ target_compile_features(sparkplug PUBLIC cxx_std_17)
 target_link_libraries(sparkplug PUBLIC
         GTest::gtest
         GTest::gmock
-        fmt::fmt
 )
 target_include_directories(sparkplug PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
