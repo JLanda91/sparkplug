@@ -1,10 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Copyright 2025 Jasper Landa
+
+
 #pragma once
 
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-
-#include <sparkplug/util/cuda_check.cuh>
-#include <sparkplug/util/pinned_host_vector.cuh>
+#include <sparkplug/util/pinned_scalar.cuh>
+#include <sparkplug/util/cuda_stream.cuh>
 
 #include "deduced_signature.hpp"
 
@@ -22,7 +24,7 @@ namespace sparkplug::testing::detail {
     public:
         using signature = typename DeducedSignature<T>::type;
 
-        HostBackendProxy() = default;
+        explicit HostBackendProxy(util::CudaStream& stream) : stream_(stream) {}
 
         struct Callable {
             mutable typename signature::input_t arg_{};
@@ -49,27 +51,26 @@ namespace sparkplug::testing::detail {
         }
 
         [[nodiscard]] auto DevicePtr() const  {
-            return thrust::raw_pointer_cast(device_callable_.data());
+            return callable_.DevicePtr();
         }
 
         [[nodiscard]] auto IsInitialized() const {
             return host_backend_ != nullptr;
         }
 
-        void PollAndSyncHostReturnIfArgSetOnDevice(const cudaStream_t& stream) {
-            util::cuda_check("Polling: D->H step", cudaMemcpyAsync, thrust::raw_pointer_cast(host_callable_.data()), thrust::raw_pointer_cast(device_callable_.data()), sizeof(Callable), cudaMemcpyDeviceToHost, stream);
-            util::cuda_check("", cudaStreamSynchronize, stream);
-            if (auto& callable = host_callable_[0]; callable.state_ == ProxyState::ArgSetOnDevice) {
-                callable.out_ = host_backend_->operator()(callable.arg_);
-                callable.state_ = ProxyState::ReturnValueSetOnHost;
-                util::cuda_check("Polling: H->D step", cudaMemcpyAsync, thrust::raw_pointer_cast(device_callable_.data()), thrust::raw_pointer_cast(host_callable_.data()), sizeof(Callable), cudaMemcpyHostToDevice, stream);
-                util::cuda_check("", cudaStreamSynchronize, stream);
+        void PollAndSyncHostReturnIfArgSetOnDevice() {
+            callable_.ToHostAsync(stream_);
+            stream_.Synchronize();
+            if (auto* callable = callable_.HostPtr(); callable->state_ == ProxyState::ArgSetOnDevice) {
+                callable->out_ = host_backend_->operator()(callable->arg_);
+                callable->state_ = ProxyState::ReturnValueSetOnHost;
+                callable_.ToDevAsync(stream_);
             }
         }
 
     private:
         T* host_backend_ = nullptr;
-        util::pinned_host_vector<Callable> host_callable_ = util::pinned_host_vector<Callable>(1);
-        thrust::device_vector<Callable> device_callable_ = thrust::device_vector<Callable>(1);
+        util::PinnedScalar<Callable> callable_{};
+        util::CudaStream& stream_;
     };
 }

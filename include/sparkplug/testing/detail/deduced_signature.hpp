@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Copyright 2025 Jasper Landa
+
+
 #pragma once
 
-#include <sparkplug/mocking/signature.hpp>
+#include <sparkplug/di/signature.hpp>
 
 namespace sparkplug::testing::detail {
 
@@ -21,11 +26,11 @@ namespace sparkplug::testing::detail {
         using result = decltype(deduce(decltype(&F::operator()){}));
 
         using input_t  = std::remove_cv_t<std::remove_reference_t<std::tuple_element_t<1, result>>>;
-        using return_t = std::remove_reference_t<std::tuple_element_t<0, result>>;
+        using return_t = std::remove_cv_t<std::remove_reference_t<std::tuple_element_t<0, result>>>;
 
     public:
         static constexpr bool value = true;
-        using type = mocking::Signature<input_t, return_t>;
+        using type = di::Signature<input_t, return_t>;
     };
 
 }

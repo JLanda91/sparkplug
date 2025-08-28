@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2025 Jasper Landa
+
+
 cmake_minimum_required(VERSION 3.31)
 
 project(Sandbox LANGUAGES CXX CUDA)

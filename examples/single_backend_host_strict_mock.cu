@@ -1,24 +1,28 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Copyright 2025 Jasper Landa
+
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
 #include <sparkplug/testing/backends.hpp>
 #include <sparkplug/testing/functor_test.hpp>
-#include <sparkplug/mocking/host_mock.hpp>
+#include <sparkplug/di/host_mock.hpp>
 
-#include "functor.cuh"
+#include "factorial_functor.cuh"
 
-using mock_t = SPARKPLUG_STRICT_HOST_MOCK(int, int);
-using backend_t = sparkplug::testing::HostBackend<mock_t>;
+using backend_t = SPARKPLUG_STRICT_MOCK_HOST_BACKEND(int, int);
+using mock_t = backend_t::type;
 
 namespace {
     using ::testing::_;
     using ::testing::Eq;
     using ::testing::Return;
 
-    struct FunctorTestWithStrictHostMock : sparkplug::testing::FunctorTest<Functor, backend_t>{};
+    struct FactorialTestWithStrictMock : sparkplug::testing::FunctorTest<Factorial, backend_t>{};
 }
 
-TEST_F(FunctorTestWithStrictHostMock, input_le_one) {
+TEST_F(FactorialTestWithStrictMock, input_le_one) {
     mock_t mock{};
     PrepareBackend(&mock);
 
@@ -29,7 +33,7 @@ TEST_F(FunctorTestWithStrictHostMock, input_le_one) {
     ASSERT_THAT(RunOnDevice(1), Eq(1));
 }
 
-TEST_F(FunctorTestWithStrictHostMock, input_gt_one) {
+TEST_F(FactorialTestWithStrictMock, input_gt_one) {
     mock_t mock{};
     PrepareBackend(&mock);
 

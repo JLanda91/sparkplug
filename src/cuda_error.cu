@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Copyright 2025 Jasper Landa
+
+
 #include <sstream>
 
 #include "../include/sparkplug/util/cuda_error.cuh"

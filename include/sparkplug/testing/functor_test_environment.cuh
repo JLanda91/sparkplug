@@ -1,44 +1,48 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Copyright 2025 Jasper Landa
+
+
 #pragma once
 
-#include <thrust/device_vector.h>
-
-#include <sparkplug/util/pinned_host_vector.cuh>
+#include <sparkplug/util/pinned_scalar.cuh>
 #include <sparkplug/util/cuda_stream.cuh>
+#include <sparkplug/util/cuda_check.cuh>
+
 #include "detail/deduced_signature.hpp"
 
 namespace sparkplug::testing {
+
 template<typename Functor>
 class FunctorTestEnvironment {
     using Signature = typename detail::DeducedSignature<Functor>::type;
 public:
     auto GetFunctorPtr() const {
-        return thrust::raw_pointer_cast(d_functor_.data());
+        return functor_.DevicePtr();
     }
 
     void SetFunctor(const Functor& f) {
-        h_functor_[0] = f;
-        util::cuda_check("FunctorTestEnvironment::SetFunctor H->D copy", cudaMemcpyAsync, thrust::raw_pointer_cast(d_functor_.data()), thrust::raw_pointer_cast(h_functor_.data()), sizeof(Functor), cudaMemcpyHostToDevice, test_driver_stream_);
-        util::cuda_check("FunctorTestEnvironment::GetReturnValue stream sync", cudaStreamSynchronize, test_driver_stream_);
+        functor_ = f;
+        functor_.ToDevAsync(test_driver_stream_);
     }
 
     auto GetInputPtr() const {
-        return thrust::raw_pointer_cast(d_input_.data());
+        return input_.DevicePtr();
     }
 
     void SetInput(const typename Signature::input_t& arg) {
-        h_input_[0] = arg;
-        util::cuda_check("FunctorTestEnvironment::SetInput H->D copy", cudaMemcpyAsync, thrust::raw_pointer_cast(d_input_.data()), thrust::raw_pointer_cast(h_input_.data()), sizeof(typename Signature::input_t), cudaMemcpyHostToDevice, test_driver_stream_);
-        util::cuda_check("FunctorTestEnvironment::GetReturnValue stream sync", cudaStreamSynchronize, test_driver_stream_);
+        input_ = arg;
+        input_.ToDevAsync(test_driver_stream_);
     }
 
     auto GetReturnPtr() {
-        return thrust::raw_pointer_cast(d_return_.data());
+        return return_.DevicePtr();
     }
 
     auto GetReturnValue() {
-        util::cuda_check("FunctorTestEnvironment::GetReturnValue D->H copy", cudaMemcpyAsync, thrust::raw_pointer_cast(h_return_.data()), thrust::raw_pointer_cast(d_return_.data()), sizeof(typename Signature::return_t), cudaMemcpyDeviceToHost, test_driver_stream_);
-        util::cuda_check("FunctorTestEnvironment::GetReturnValue stream sync", cudaStreamSynchronize, test_driver_stream_);
-        return h_return_[0];
+        return_.ToHostAsync(test_driver_stream_);
+        test_driver_stream_.Synchronize();
+        return *return_.HostPtr();
     }
 
     auto& TestDriverStream() {
@@ -53,17 +57,14 @@ private:
     util::CudaStream test_driver_stream_ = {};
     util::CudaStream proxy_stream_ = {};
 
-    util::pinned_host_vector<Functor> h_functor_ = util::pinned_host_vector<Functor>(1);
-    util::pinned_host_vector<typename Signature::input_t> h_input_ = util::pinned_host_vector<typename Signature::input_t>(1);
-    util::pinned_host_vector<typename Signature::return_t> h_return_ = util::pinned_host_vector<typename Signature::return_t>(1);
-
-    thrust::device_vector<Functor> d_functor_ = thrust::device_vector<Functor>(1);
-    thrust::device_vector<typename Signature::input_t> d_input_ = thrust::device_vector<typename Signature::input_t>(1);
-    thrust::device_vector<typename Signature::return_t> d_return_ = thrust::device_vector<typename Signature::return_t>(1);
+    util::PinnedScalar<Functor> functor_ {};
+    util::PinnedScalar<typename Signature::input_t> input_ {};
+    util::PinnedScalar<typename Signature::return_t> return_ {};
 };
 
 namespace detail {
     template<typename Functor>
     inline FunctorTestEnvironment<Functor>* functor_test_env = nullptr;
 }
+
 }

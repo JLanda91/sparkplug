@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Copyright 2025 Jasper Landa
+
+
 #include <sparkplug/util/cuda_stream.cuh>
 #include <sparkplug/util/cuda_check.cuh>
 
@@ -12,5 +17,9 @@ namespace sparkplug::util {
 
     CudaStream::operator cudaStream_t() const {
         return cuda_stream_;
+    }
+
+    void CudaStream::Synchronize() {
+        cuda_check("CudaStream sync", cudaStreamSynchronize, cuda_stream_);
     }
 }

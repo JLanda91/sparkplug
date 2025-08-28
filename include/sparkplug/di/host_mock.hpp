@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Copyright 2025 Jasper Landa
+
+
 #pragma once
 
 #include <gmock/gmock.h>
 
-namespace sparkplug::mocking {
+namespace sparkplug::di {
 template<typename Signature>
 struct HostMock {
     typename Signature::return_t operator()(const typename Signature::input_t& arg) const {
@@ -22,6 +27,6 @@ using StrictHostMock = ::testing::StrictMock<HostMock<Signature>>;
 
 }
 
-#define SPARKPLUG_NICE_HOST_MOCK(InputT, ReturnT) sparkplug::mocking::NiceHostMock<sparkplug::mocking::Signature<InputT, ReturnT>>
-#define SPARKPLUG_NAGGY_HOST_MOCK(InputT, ReturnT) sparkplug::mocking::NaggyHostMock<sparkplug::mocking::Signature<InputT, ReturnT>>
-#define SPARKPLUG_STRICT_HOST_MOCK(InputT, ReturnT) sparkplug::mocking::StrictHostMock<sparkplug::mocking::Signature<InputT, ReturnT>>
+#define SPARKPLUG_NICE_MOCK_HOST_BACKEND(InputT, ReturnT) sparkplug::testing::HostBackend<sparkplug::di::NiceHostMock<sparkplug::di::Signature<InputT, ReturnT>>>
+#define SPARKPLUG_NAGGY_MOCK_HOST_BACKEND(InputT, ReturnT) sparkplug::testing::HostBackend<sparkplug::di::NaggyHostMock<sparkplug::di::Signature<InputT, ReturnT>>>
+#define SPARKPLUG_STRICT_MOCK_HOST_BACKEND(InputT, ReturnT) sparkplug::testing::HostBackend<sparkplug::di::StrictHostMock<sparkplug::di::Signature<InputT, ReturnT>>>

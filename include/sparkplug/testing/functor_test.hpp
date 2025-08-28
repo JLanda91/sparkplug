@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Copyright 2025 Jasper Landa
+
+
 #pragma once
 
 #include <gtest/gtest.h>
@@ -5,18 +10,16 @@
 #include <thread>
 #include <atomic>
 
-#include <sparkplug/testing/detail/host_backend_proxy.cuh>
-
 #include "functor_test_environment.cuh"
 #include "launch_test_kernel.cuh"
+#include "detail/mapped_proxy.hpp"
 
 namespace sparkplug::testing {
 
-template <template <typename> typename Functor, typename HostBackend>
+template <template <typename> typename Functor, typename Backend>
 class FunctorTest : public ::testing::Test {
     // backend mappings
-    static_assert(!HostBackend::is_device_side); // REMOVE WHEN BOTH HOST+DEVICE BACKENDS ARE DONE
-    using mapped_proxy_t = detail::HostBackendProxy<typename HostBackend::type>; // EXPAND TO TUPLE FOR MULTIPLE BACKENDS
+    using mapped_proxy_t = detail::mapped_proxy_t<Backend>; // EXPAND TO TUPLE FOR MULTIPLE BACKENDS
 
 public:
     // functor mappings
@@ -32,7 +35,7 @@ public:
         detail::functor_test_env<functor_t> = nullptr;
     }
 
-    void PrepareBackend(typename HostBackend::type* arg) {
+    void PrepareBackend(typename Backend::type* arg) {
         proxied_backend_.SetBackend(arg);
     }
 
@@ -42,16 +45,24 @@ public:
             return typename functor_signature_t::return_t();
         }
 
+        if constexpr (Backend::is_device_side) {
+            proxied_backend_.PopulateDevice();
+        }
+
         detail::functor_test_env<functor_t>->SetInput(arg);
         detail::functor_test_env<functor_t>->SetFunctor(functor_t{proxied_backend_.DevicePtr()});
 
-        is_kernel_finished_.store(false);
-        std::thread host_poller([this] {
-            while(!is_kernel_finished_.load()) {
-                proxied_backend_.PollAndSyncHostReturnIfArgSetOnDevice(detail::functor_test_env<functor_t>->ProxyStream());
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            }
-        });
+        if constexpr (!Backend::is_device_side) {
+            is_kernel_finished_.store(false);
+            host_poller_ = std::thread([this] {
+                while(!is_kernel_finished_.load()) {
+                    proxied_backend_.PollAndSyncHostReturnIfArgSetOnDevice();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
+            });
+        }
+
+        detail::functor_test_env<functor_t>->ProxyStream().Synchronize();
 
         launch_test_kernel_nocreate(
             detail::functor_test_env<functor_t>->GetFunctorPtr(),
@@ -60,15 +71,18 @@ public:
             detail::functor_test_env<functor_t>->TestDriverStream()
         );
 
-        util::cuda_check("FunctorTest::RunOnDevice stream sync", cudaStreamSynchronize, detail::functor_test_env<functor_t>->TestDriverStream());
-        is_kernel_finished_.store(true);
+        detail::functor_test_env<functor_t>->TestDriverStream().Synchronize();
 
-        host_poller.join();
+        if constexpr (!Backend::is_device_side) {
+            is_kernel_finished_.store(true);
+            host_poller_.join();
+        }
         return detail::functor_test_env<functor_t>->GetReturnValue();
     }
 
 protected:
     std::atomic<bool> is_kernel_finished_ = false;
-    mapped_proxy_t proxied_backend_ = {};
+    mapped_proxy_t proxied_backend_ = mapped_proxy_t{detail::functor_test_env<functor_t>->ProxyStream()};
+    std::thread host_poller_;
 };
 }

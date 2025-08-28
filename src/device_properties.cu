@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Copyright 2025 Jasper Landa
+
+
 #include <sparkplug/util/device_properties.cuh>
 #include <sparkplug/util/cuda_check.cuh>
 
