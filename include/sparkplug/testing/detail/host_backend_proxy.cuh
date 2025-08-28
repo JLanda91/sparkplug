@@ -22,18 +22,17 @@ namespace sparkplug::testing::detail {
     template<typename T>
     class HostBackendProxy {
     public:
-        using signature = typename DeducedSignature<T>::type;
+        static_assert(DeducedSignature<T>::value, "Cannot instantiate HostBackendProxy: type has no call operator");
+        using signature_t = typename DeducedSignature<T>::type;
 
         explicit HostBackendProxy(util::CudaStream& stream) : stream_(stream) {}
 
         struct Callable {
-            mutable typename signature::input_t arg_{};
-            volatile typename signature::return_t out_{};
+            mutable typename signature_t::input_t arg_{};
+            volatile typename signature_t::return_t out_{};
             volatile mutable ProxyState state_ = ProxyState::Idle;
 
-            __device__ typename signature::return_t operator()(const typename signature::input_t& arg) const {
-                assert(state_ == ProxyState::Idle);
-
+            __device__ typename signature_t::return_t operator()(const typename signature_t::input_t& arg) const {
                 arg_ = arg;
                 state_ = ProxyState::ArgSetOnDevice;
 

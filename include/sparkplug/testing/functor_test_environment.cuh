@@ -15,7 +15,8 @@ namespace sparkplug::testing {
 
 template<typename Functor>
 class FunctorTestEnvironment {
-    using Signature = typename detail::DeducedSignature<Functor>::type;
+    using signature_t = typename detail::DeducedSignature<Functor>::type;
+
 public:
     auto GetFunctorPtr() const {
         return functor_.DevicePtr();
@@ -30,7 +31,7 @@ public:
         return input_.DevicePtr();
     }
 
-    void SetInput(const typename Signature::input_t& arg) {
+    void SetInput(const typename signature_t::input_t& arg) {
         input_ = arg;
         input_.ToDevAsync(test_driver_stream_);
     }
@@ -58,8 +59,8 @@ private:
     util::CudaStream proxy_stream_ = {};
 
     util::PinnedScalar<Functor> functor_ {};
-    util::PinnedScalar<typename Signature::input_t> input_ {};
-    util::PinnedScalar<typename Signature::return_t> return_ {};
+    util::PinnedScalar<typename signature_t::input_t> input_ {};
+    util::PinnedScalar<typename signature_t::return_t> return_ {};
 };
 
 namespace detail {

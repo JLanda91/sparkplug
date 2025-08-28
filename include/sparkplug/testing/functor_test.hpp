@@ -19,11 +19,13 @@ namespace sparkplug::testing {
 template <template <typename> typename Functor, typename Backend>
 class FunctorTest : public ::testing::Test {
     // backend mappings
-    using mapped_proxy_t = detail::mapped_proxy_t<Backend>; // EXPAND TO TUPLE FOR MULTIPLE BACKENDS
+    using mapped_proxy_t = detail::mapped_proxy_t<Backend>;
 
 public:
     // functor mappings
     using functor_t = Functor<typename mapped_proxy_t::Callable>;
+
+    static_assert(detail::DeducedSignature<functor_t>::value, "Functor has no call operator");
     using functor_signature_t = typename detail::DeducedSignature<functor_t>::type;
 
     static void SetUpTestSuite() {

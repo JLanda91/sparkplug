@@ -16,7 +16,8 @@ namespace sparkplug::testing::detail {
     template<typename T>
     class DeviceBackendProxy {
     public:
-        using signature = typename DeducedSignature<T>::type;
+        static_assert(DeducedSignature<T>::value, "Cannot instantiate DeviceBackendProxy: type has no call operator");
+
         using Callable = T;
 
         explicit DeviceBackendProxy(util::CudaStream& stream) : stream_(stream) {}
