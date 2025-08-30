@@ -17,7 +17,7 @@ Please see the [examples](#examples) below.
   where dependencies are injected by means of static polymorphism.
 - Provides templates to deduce call operator signatures, launching 1-thread test kernels, specifying host/device 
   backends and their object types.
-- Provides basic dependency blocks: host/device stubs and google mocks with call operators, and aliases to their 
+- Provides basic dependency building blocks: host/device stubs and google mocks with call operators, and aliases to their 
   NiceMock, NaggyMock and StrictMock derived classes.
 - Provides utilities to get device properties, check CUDA function call return values on errors, RAII CUDA streams etc.
 
@@ -178,7 +178,7 @@ requirements:
   and vtable indirections), as gpu functor performance is often of vital importance.
 - Its call operator and the call operators of the dependency must have a single argument.
 
-As of now, only a `nvcc + g++` CMakePresets exists. More compatibility will be tested in the future, after which presets 
+As of now, only a `nvcc + g++` base CMake preset is provided. More compatibility will be tested in the future, after which presets 
 with other host compilers will be added.
 
 ## Compatability
