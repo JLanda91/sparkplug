@@ -35,5 +35,5 @@ TEST_F(FactorialTestWithHostStub, input_gt_one) {
     stub_t stub{24};
     PrepareBackend(&stub);
 
-    ASSERT_THAT(RunOnDevice(5), ::testing::Eq(120));
+    ASSERT_THAT(RunOnDevice(5), Eq(120));
 }
