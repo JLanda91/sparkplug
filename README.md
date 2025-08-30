@@ -178,5 +178,8 @@ requirements:
   and vtable indirections), as gpu functor performance is often of vital importance.
 - Its call operator and the call operators of the dependency must have a single argument.
 
-As of now only a `nvcc + g++` CMakePresets exists. More compatibility will be tested in the future, after which presets 
+As of now, only a `nvcc + g++` CMakePresets exists. More compatibility will be tested in the future, after which presets 
 with other host compilers will be added.
+
+## Compatability
+Tested with GCC 14 and CUDA 12.8.
