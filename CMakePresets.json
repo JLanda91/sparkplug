@@ -12,33 +12,28 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}",
       "hidden": true,
-      "toolchainFile": "/home/jasper/vcpkg/scripts/buildsystems/vcpkg.cmake",
-      "cacheVariables": {
-        "VCPKG_MANIFEST_INSTALL": "OFF",
-        "CMAKE_VERBOSE_MAKEFILE": "OFF"
-      }
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
     },
     {
-      "name": "gcc-14",
+      "name": "gcc",
       "inherits": ["base"],
-      "displayName": "GCC 14",
+      "displayName": "GCC",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "/usr/bin/g++-14",
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
         "CMAKE_CXX_EXTENSIONS": "OFF",
-        "CMAKE_CUDA_ARCHITECTURES": "86",
-        "CMAKE_CUDA_COMPILER": "$env{NVIDIA_HPC_SDK}/compilers/bin/nvcc",
-        "CMAKE_CUDA_HOST_COMPILER": "/usr/bin/g++-14"
+        "CMAKE_CUDA_COMPILER": "$env{NVCOMPILERS}/bin/nvcc",
+        "CMAKE_CUDA_HOST_COMPILER": "/usr/bin/g++"
       },
       "environment": {
-        "NVIDIA_HPC_SDK": "/opt/nvidia/hpc_sdk/Linux_x86_64/25.3",
-        "CUDACXX": "$env{NVIDIA_HPC_SDK}/compilers/bin/nvcc"
+        "CUDACXX": "$env{NVCOMPILERS}/bin/nvcc"
       }
     },
     {
-      "name": "gcc-14-debug",
-      "displayName": "GCC 14 Debug",
-      "inherits": ["gcc-14"],
+      "name": "gcc-debug",
+      "displayName": "GCC Debug",
+      "inherits": ["gcc"],
+      "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_FLAGS": "-g -O0 -Wall -Wextra",
@@ -46,9 +41,10 @@
       }
     },
     {
-      "name": "gcc-14-release",
-      "displayName": "GCC 14 Release",
-      "inherits": ["gcc-14"],
+      "name": "gcc-release",
+      "displayName": "GCC Release",
+      "inherits": ["gcc"],
+      "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_CXX_FLAGS": "-O3 -DNDEBUG -Wall -Wextra -Werror",

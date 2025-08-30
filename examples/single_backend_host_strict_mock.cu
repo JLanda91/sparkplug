@@ -39,5 +39,5 @@ TEST_F(FactorialTestWithStrictMock, input_gt_one) {
 
     EXPECT_CALL(mock, Call(4)).WillOnce(Return(24));
 
-    ASSERT_THAT(RunOnDevice(5), ::testing::Eq(120));
+    ASSERT_THAT(RunOnDevice(5), Eq(120));
 }
