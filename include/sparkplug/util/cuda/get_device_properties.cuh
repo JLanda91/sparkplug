@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <cuda_runtime_api.h>
+
 namespace sparkplug::util {
 
     const cudaDeviceProp& get_device_properties();

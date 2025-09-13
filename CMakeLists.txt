@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Copyright 2025 Jasper Landa
+#
 
 
 cmake_minimum_required(VERSION 3.31)
@@ -10,19 +11,19 @@ project(Sandbox LANGUAGES CXX CUDA)
 find_package(GTest CONFIG REQUIRED)
 
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 
 # ===== BUILD RULES =====
 add_library(sparkplug STATIC
-        src/cuda_error.cu
-        src/cuda_stream.cu
-        src/device_properties.cu
+        src/cuda_fn_error.cu
+        src/stream.cu
+        src/get_device_properties.cu
 )
-target_compile_features(sparkplug PUBLIC cxx_std_17)
+target_compile_features(sparkplug PUBLIC cxx_std_20)
 target_link_libraries(sparkplug PUBLIC
         GTest::gtest
         GTest::gmock
