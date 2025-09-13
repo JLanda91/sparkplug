@@ -12,7 +12,7 @@
 #include <chrono>
 
 #include <sparkplug/util/concepts/dependency.hpp>
-#include <sparkplug/di/signature.hpp>
+#include <sparkplug/util/signature.hpp>
 
 #include "detail/functor_test_environment.hpp"
 #include "detail/launch_test_kernel.cuh"
@@ -43,7 +43,7 @@ class FunctorTest : public ::testing::Test {
 
 public:
     using functor = detail::specialized_functor_t<FunctorTemplate, typename dependency_tuple::proxy_tuple>;
-    using functor_signature = di::deduced_signature_t<functor>;
+    using functor_signature = util::deduced_signature_t<functor>;
 
     static void SetUpTestSuite() {
         detail::functor_test_env<functor> = new detail::FunctorTestEnvironment<functor>;
@@ -60,7 +60,7 @@ public:
 
         std::apply([](auto const&... elems) {
            detail::functor_test_env<functor>->EmplaceFunctor(elems.DevicePtr()...);
-        }, dependencies_.dependency_proxies);
+        }, dependencies_.Proxies());
     }
 
     template<typename ... Args>
@@ -69,13 +69,11 @@ public:
     }
 
     functor_signature::return_type RunOnDevice() {
-        if (!dependencies_.is_initialized) {
+        if (!dependencies_.IsInitialized()) {
             throw std::runtime_error("Dependencies were not initialized with FunctorTest::InjectDependencies");
         }
 
         dependencies_.PopulateDeviceProxies(detail::functor_test_env<functor>->TestDriverStream());
-
-        // detail::functor_test_env<functor>->SetFunctor(detail::make_functor<functor>(dependencies_.dependency_proxies));
 
         if constexpr (dependency_tuple::has_host_dependencies) {
             is_kernel_finished_.store(false);

@@ -58,10 +58,17 @@ public:
         is_initialized = true;
     }
 
-    proxy_tuple dependency_proxies{};
-    bool is_initialized = false;
+    [[nodiscard]] auto IsInitialized() const -> bool {
+        return is_initialized;
+    }
+
+    [[nodiscard]] auto Proxies() const -> const proxy_tuple& {
+        return dependency_proxies;
+    }
 
 private:
+    proxy_tuple dependency_proxies{};
+    bool is_initialized = false;
 
     template <typename ArgTuple, std::size_t... Is>
     void PrepareProxiesImpl(ArgTuple&& arg_tuple, std::index_sequence<Is...> ) {

@@ -8,7 +8,7 @@
 
 #include <sparkplug/util/concepts/callable.hpp>
 
-namespace sparkplug::di {
+namespace sparkplug::util {
 
 template<typename ArgT, typename ReturnT>
 struct Signature {

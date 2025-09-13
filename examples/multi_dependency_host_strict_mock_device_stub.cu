@@ -13,8 +13,8 @@
 
 
 namespace {
-    using dependency1_t = sparkplug::di::host_strict_gmock_functor_dependency<sparkplug::di::Signature<unsigned long, unsigned>>;
-    using dependency2_t = sparkplug::di::device_stub_functor_dependency<sparkplug::di::Signature<unsigned long, unsigned>>;
+    using dependency1_t = sparkplug::di::host_strict_gmock_functor_dependency<sparkplug::util::Signature<unsigned long, unsigned>>;
+    using dependency2_t = sparkplug::di::device_stub_functor_dependency<sparkplug::util::Signature<unsigned long, unsigned>>;
 
     using ::testing::_;
     using ::testing::Eq;

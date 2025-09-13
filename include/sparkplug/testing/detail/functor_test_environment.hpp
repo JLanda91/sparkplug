@@ -7,14 +7,13 @@
 
 #include <sparkplug/util/cuda/pinned_scalar.cuh>
 #include <sparkplug/util/cuda/stream.cuh>
-
-#include "sparkplug/di/signature.hpp"
+#include <sparkplug/util/signature.hpp>
 
 namespace sparkplug::testing::detail {
 
 template<util::concepts::Callable Functor>
 class FunctorTestEnvironment {
-    using signature = di::deduced_signature_t<Functor>;
+    using signature = util::deduced_signature_t<Functor>;
 
 public:
     auto GetFunctorPtr() const {

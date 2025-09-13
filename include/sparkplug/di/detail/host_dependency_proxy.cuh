@@ -5,12 +5,12 @@
 
 #pragma once
 
-// #include <cuda_runtime.h>
+#include <cuda_runtime.h>
 
 #include <sparkplug/util/cuda/pinned_scalar.cuh>
 #include <sparkplug/util/cuda/stream.cuh>
+#include <sparkplug/util/signature.hpp>
 
-#include "../signature.hpp"
 
 namespace sparkplug::di::detail {
 
@@ -42,7 +42,7 @@ struct HostDepedencyProxyFunctor {
 };
 
 template<util::concepts::Dependency Dep>
-struct HostDependencyProxy : DependencyProxy<Dep, HostDepedencyProxyFunctor<deduced_signature_t<typename Dep::type>>> {
+struct HostDependencyProxy : DependencyProxy<Dep, HostDepedencyProxyFunctor<util::deduced_signature_t<typename Dep::type>>> {
 
     void PollAndUpdateCallableWithHostReturnValue(util::cuda::Stream& stream) {
         this->callable_.ToHostAsync(stream);

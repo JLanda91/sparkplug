@@ -11,7 +11,7 @@
 #include "factorial_functor.cuh"
 
 namespace {
-    using dependency_t = sparkplug::di::host_strict_gmock_functor_dependency<sparkplug::di::Signature<int, int>>;
+    using dependency_t = sparkplug::di::host_strict_gmock_functor_dependency<sparkplug::util::Signature<int, int>>;
 
     using ::testing::_;
     using ::testing::Eq;
