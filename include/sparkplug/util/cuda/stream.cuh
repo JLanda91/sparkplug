@@ -5,13 +5,15 @@
 
 #pragma once
 
-namespace sparkplug::util {
+#include <cuda_runtime_api.h>
 
-class CudaStream {
+namespace sparkplug::util::cuda {
+
+class Stream {
 public:
-    CudaStream();
+    Stream();
 
-    ~CudaStream();
+    ~Stream();
 
     operator cudaStream_t() const;
 

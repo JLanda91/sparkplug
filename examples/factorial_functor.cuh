@@ -5,22 +5,13 @@
 
 #pragma once
 
-template<typename Backend>
-class Factorial {
-    const Backend* recurse_backend_ = nullptr;
-
-public:
-    Factorial() = default;
-
-    explicit Factorial(const Backend* backend) : recurse_backend_(backend) {}
+template<typename Dependency>
+struct Factorial {
+    const Dependency* dep_ = nullptr;
 
     __device__ int operator()(int x) const {
-        if (x < 0) {
-            return 0;
-        }
-        if (x <= 1) {
-            return 1;
-        }
-        return x * (*recurse_backend_)(x-1);
+        if (x < 0) return 0;
+        if (x <= 1) return 1;
+        return x * (*dep_)(x-1);
     }
 };

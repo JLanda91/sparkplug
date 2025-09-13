@@ -9,82 +9,101 @@
 
 #include <thread>
 #include <atomic>
+#include <chrono>
 
-#include "functor_test_environment.cuh"
-#include "launch_test_kernel.cuh"
-#include "detail/mapped_proxy.hpp"
+#include <sparkplug/util/concepts/dependency.hpp>
+#include <sparkplug/util/signature.hpp>
+
+#include "detail/functor_test_environment.hpp"
+#include "detail/launch_test_kernel.cuh"
+#include "detail/dependency_tuple.hpp"
 
 namespace sparkplug::testing {
 
-template <template <typename> typename Functor, typename Backend>
+namespace detail {
+
+template <template <typename...> typename FunctorTemplate, typename Tuple, std::size_t... I>
+auto specialized_functor_impl(std::index_sequence<I...>) -> FunctorTemplate<typename std::tuple_element_t<I, Tuple>::callable...>;
+
+template <template <typename...> typename FunctorTemplate, typename Tuple>
+using specialized_functor_t = decltype(specialized_functor_impl<FunctorTemplate, Tuple>(std::make_index_sequence<std::tuple_size_v<Tuple>>{}));
+
+template <util::concepts::Callable Functor, typename Tuple>
+auto make_functor(const Tuple& proxies) {
+    return std::apply([](auto const&... elems) {
+        return Functor{elems.DevicePtr()...};
+    }, proxies);
+}
+
+}
+
+template <template <typename...> typename FunctorTemplate, util::concepts::Dependency ... Deps>
 class FunctorTest : public ::testing::Test {
-    // backend mappings
-    using mapped_proxy_t = detail::mapped_proxy_t<Backend>;
+    using dependency_tuple = detail::DependencyTuple<Deps...>;
 
 public:
-    // functor mappings
-    using functor_t = Functor<typename mapped_proxy_t::Callable>;
-
-    static_assert(detail::DeducedSignature<functor_t>::value, "Functor has no call operator");
-    using functor_signature_t = typename detail::DeducedSignature<functor_t>::type;
+    using functor = detail::specialized_functor_t<FunctorTemplate, typename dependency_tuple::proxy_tuple>;
+    using functor_signature = util::deduced_signature_t<functor>;
 
     static void SetUpTestSuite() {
-        detail::functor_test_env<functor_t> = new FunctorTestEnvironment<functor_t>;
+        detail::functor_test_env<functor> = new detail::FunctorTestEnvironment<functor>;
     }
 
     static void TearDownTestSuite() {
-        delete detail::functor_test_env<functor_t>;
-        detail::functor_test_env<functor_t> = nullptr;
+        delete detail::functor_test_env<functor>;
+        detail::functor_test_env<functor> = nullptr;
+        cudaDeviceReset();
     }
 
-    void PrepareBackend(typename Backend::type* arg) {
-        proxied_backend_.SetBackend(arg);
+    void InjectDependencies(Deps::type* ... arg) {
+        dependencies_.PrepareProxies(arg...);
+
+        std::apply([](auto const&... elems) {
+           detail::functor_test_env<functor>->EmplaceFunctor(elems.DevicePtr()...);
+        }, dependencies_.Proxies());
     }
 
-    typename functor_signature_t::return_t RunOnDevice(const typename functor_signature_t::input_t& arg) {
-        if (!proxied_backend_.IsInitialized()) {
-            ADD_FAILURE() << "Backend is not initialized";
-            return typename functor_signature_t::return_t();
+    template<typename ... Args>
+    void ConstructArgumentOnDevice(Args&& ... args) {
+        detail::functor_test_env<functor>->EmplaceArg(std::forward<Args>(args)...);
+    }
+
+    functor_signature::return_type RunOnDevice() {
+        if (!dependencies_.IsInitialized()) {
+            throw std::runtime_error("Dependencies were not initialized with FunctorTest::InjectDependencies");
         }
 
-        if constexpr (Backend::is_device_side) {
-            proxied_backend_.PopulateDevice();
-        }
+        dependencies_.PopulateDeviceProxies(detail::functor_test_env<functor>->TestDriverStream());
 
-        detail::functor_test_env<functor_t>->SetInput(arg);
-        detail::functor_test_env<functor_t>->SetFunctor(functor_t{proxied_backend_.DevicePtr()});
-
-        if constexpr (!Backend::is_device_side) {
+        if constexpr (dependency_tuple::has_host_dependencies) {
             is_kernel_finished_.store(false);
             host_poller_ = std::thread([this] {
                 while(!is_kernel_finished_.load()) {
-                    proxied_backend_.PollAndSyncHostReturnIfArgSetOnDevice();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    dependencies_.PollAndSyncHostProxies(detail::functor_test_env<functor>->ProxyStream());
+                    std::this_thread::sleep_for(std::chrono::microseconds(10));
                 }
             });
         }
 
-        detail::functor_test_env<functor_t>->ProxyStream().Synchronize();
-
-        launch_test_kernel_nocreate(
-            detail::functor_test_env<functor_t>->GetFunctorPtr(),
-            detail::functor_test_env<functor_t>->GetInputPtr(),
-            detail::functor_test_env<functor_t>->GetReturnPtr(),
-            detail::functor_test_env<functor_t>->TestDriverStream()
+        detail::launch_functor_test_kernel(
+            detail::functor_test_env<functor>->GetFunctorPtr(),
+            detail::functor_test_env<functor>->GetArgPtr(),
+            detail::functor_test_env<functor>->GetReturnPtr(),
+            detail::functor_test_env<functor>->TestDriverStream()
         );
 
-        detail::functor_test_env<functor_t>->TestDriverStream().Synchronize();
+        detail::functor_test_env<functor>->TestDriverStream().Synchronize();
 
-        if constexpr (!Backend::is_device_side) {
+        if constexpr (dependency_tuple::has_host_dependencies) {
             is_kernel_finished_.store(true);
             host_poller_.join();
         }
-        return detail::functor_test_env<functor_t>->GetReturnValue();
+        return detail::functor_test_env<functor>->GetReturnValue();
     }
 
-protected:
+private:
     std::atomic<bool> is_kernel_finished_ = false;
-    mapped_proxy_t proxied_backend_ = mapped_proxy_t{detail::functor_test_env<functor_t>->ProxyStream()};
+    dependency_tuple dependencies_;
     std::thread host_poller_;
 };
 }
