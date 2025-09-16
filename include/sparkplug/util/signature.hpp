@@ -10,10 +10,10 @@
 
 namespace sparkplug::util {
 
-template<typename ArgT, typename ReturnT>
+template<typename ReturnT, typename ArgT>
 struct Signature {
-    using arg_type = ArgT;
     using return_type = ReturnT;
+    using arg_type = ArgT;
 };
 
 template<concepts::Callable F>
@@ -27,7 +27,7 @@ class deduced_signature {
     using return_type = std::remove_cvref_t<std::tuple_element_t<0, result>>;
 
 public:
-    using type = Signature<arg_type, return_type>;
+    using type = Signature<return_type, arg_type>;
 };
 
 template<concepts::Callable F>

@@ -23,17 +23,10 @@ namespace sparkplug::testing {
 namespace detail {
 
 template <template <typename...> typename FunctorTemplate, typename Tuple, std::size_t... I>
-auto specialized_functor_impl(std::index_sequence<I...>) -> FunctorTemplate<typename std::tuple_element_t<I, Tuple>::callable...>;
+auto specialized_functor(std::index_sequence<I...>) -> FunctorTemplate<typename std::tuple_element_t<I, Tuple>::callable...>;
 
 template <template <typename...> typename FunctorTemplate, typename Tuple>
-using specialized_functor_t = decltype(specialized_functor_impl<FunctorTemplate, Tuple>(std::make_index_sequence<std::tuple_size_v<Tuple>>{}));
-
-template <util::concepts::Callable Functor, typename Tuple>
-auto make_functor(const Tuple& proxies) {
-    return std::apply([](auto const&... elems) {
-        return Functor{elems.DevicePtr()...};
-    }, proxies);
-}
+using specialized_functor_t = decltype(specialized_functor<FunctorTemplate, Tuple>(std::make_index_sequence<std::tuple_size_v<Tuple>>{}));
 
 inline constexpr unsigned kHostPollSleepIntervalNs = 10'000u;
 
@@ -54,7 +47,11 @@ public:
     static void TearDownTestSuite() {
         delete detail::functor_test_env<functor>;
         detail::functor_test_env<functor> = nullptr;
-        cudaDeviceReset();
+        util::cuda::check_cuda_fn_error("Reset Device", cudaDeviceReset);
+    }
+
+    void TearDown() override {
+        detail::functor_test_env<functor>->ProxyStream().Synchronize();
     }
 
     void InjectDependencies(Deps::type* ... arg) {
