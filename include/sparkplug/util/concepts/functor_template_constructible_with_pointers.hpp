@@ -8,7 +8,7 @@
 namespace sparkplug::util::concepts {
 
 template<template <typename ...> typename FunctorTemplate, typename ... FunctorDeps>
-concept TestableFunctorTemplate = requires {
+concept FunctorTemplateConstructibleWithPointers = requires {
     typename FunctorTemplate<FunctorDeps...>;
     requires std::constructible_from<FunctorTemplate<FunctorDeps...>, FunctorDeps* ...>;
 };
