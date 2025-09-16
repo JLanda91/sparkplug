@@ -18,6 +18,12 @@ public:
         check_cuda_fn_error("PinnedScalar device alloc", cudaMalloc<T>, &d_scalar_, sizeof(T));
     }
 
+    template<typename ... Args>
+    explicit PinnedScalar(std::in_place_t, Args&& ... args) : PinnedScalar() {
+        std::construct_at(h_scalar_, std::forward<Args>(args)...);
+        is_emplaced_ = true;
+    }
+
     PinnedScalar& operator=(const T& arg) {
         *h_scalar_ = arg;
         is_emplaced_ = false;

@@ -11,6 +11,8 @@
 #include <sparkplug/util/cuda/stream.cuh>
 #include <sparkplug/util/signature.hpp>
 
+#include "dependency_proxy.hpp"
+
 
 namespace sparkplug::di::detail {
 
@@ -20,39 +22,59 @@ enum class ProxyState {
     ReturnValueSetOnHost,
 };
 
-inline constexpr unsigned kDeviceProxyPollIntervalNs = 10'000u;
+inline constexpr unsigned kProxySleepIntervalNs = 10'000u;
 
 template<util::concepts::Signature Signature>
-struct HostDepedencyProxyFunctor {
-    mutable Signature::arg_type arg_{};
-    volatile Signature::return_type out_{};
-    volatile mutable ProxyState state_ = ProxyState::Idle;
+class HostDepedencyProxyFunctor {
+public:
+    HostDepedencyProxyFunctor(ProxyState* state, Signature::arg_type* arg, Signature::return_type* out) : state_(state), arg_(arg), return_(out)  {}
 
     __device__ Signature::return_type operator()(const Signature::arg_type& arg) const {
-        arg_ = arg;
-        state_ = ProxyState::ArgSetOnDevice;
+        *arg_ = arg;
+        *state_ = ProxyState::ArgSetOnDevice;
 
-        while (state_ != ProxyState::ReturnValueSetOnHost) {
-            __nanosleep(kDeviceProxyPollIntervalNs);
+        while (*state_ != ProxyState::ReturnValueSetOnHost) {
+            __nanosleep(kProxySleepIntervalNs);
         }
 
-        state_ = ProxyState::Idle;
-        return out_;
+        *state_ = ProxyState::Idle;
+        return *return_;
     }
+
+private:
+    volatile ProxyState* state_;
+    Signature::arg_type* arg_;
+    volatile Signature::return_type* return_;
 };
 
 template<util::concepts::Dependency Dep>
-struct HostDependencyProxy : DependencyProxy<Dep, HostDepedencyProxyFunctor<util::deduced_signature_t<typename Dep::type>>> {
+class HostDependencyProxy : public DependencyProxy<HostDependencyProxy<Dep>, Dep, HostDepedencyProxyFunctor<util::deduced_signature_t<typename Dep::type>>> {
+public:
+    void PopulateDevice(util::cuda::Stream& stream) {
+        this->callable_.emplace(state_.DevicePtr(), arg_.DevicePtr(), return_.DevicePtr());
+        this->callable_.ToDevAsync(stream);
+        this->state_.ToDevAsync(stream);
+    }
 
-    void PollAndUpdateCallableWithHostReturnValue(util::cuda::Stream& stream) {
-        this->callable_.ToHostAsync(stream);
+    void PollAndUpdateWithHostReturnValue(util::cuda::Stream& stream) {
+        state_.ToHostAsync(stream);
         stream.Synchronize();
-        if (auto* callable = this->callable_.HostPtr(); callable->state_ == ProxyState::ArgSetOnDevice) {
-            callable->out_ = this->host_dependency_->operator()(callable->arg_);
-            callable->state_ = ProxyState::ReturnValueSetOnHost;
-            this->callable_.ToDevAsync(stream);
+        arg_.ToHostAsync(stream);
+        if (*state_.HostPtr() == ProxyState::ArgSetOnDevice) {
+            *state_.HostPtr() = ProxyState::ReturnValueSetOnHost;
+            stream.Synchronize();
+            *return_.HostPtr() = this->host_dependency_->operator()(*arg_.HostPtr());
+            return_.ToDevAsync(stream);
+            state_.ToDevAsync(stream);
         }
     }
+
+private:
+    using signature = util::deduced_signature_t<typename Dep::type>;
+
+    util::cuda::PinnedScalar<ProxyState> state_{std::in_place, ProxyState::Idle};
+    util::cuda::PinnedScalar<typename signature::arg_type> arg_{};
+    util::cuda::PinnedScalar<typename signature::return_type> return_{};
 };
 
 }

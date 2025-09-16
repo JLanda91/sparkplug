@@ -35,6 +35,8 @@ auto make_functor(const Tuple& proxies) {
     }, proxies);
 }
 
+inline constexpr unsigned kHostPollSleepIntervalNs = 10'000u;
+
 }
 
 template <template <typename...> typename FunctorTemplate, util::concepts::Dependency ... Deps>
@@ -73,14 +75,14 @@ public:
             throw std::runtime_error("Dependencies were not initialized with FunctorTest::InjectDependencies");
         }
 
-        dependencies_.PopulateDeviceProxies(detail::functor_test_env<functor>->TestDriverStream());
+        dependencies_.PopulateProxiesOnDevice(detail::functor_test_env<functor>->TestDriverStream());
 
         if constexpr (dependency_tuple::has_host_dependencies) {
             is_kernel_finished_.store(false);
             host_poller_ = std::thread([this] {
                 while(!is_kernel_finished_.load()) {
                     dependencies_.PollAndSyncHostProxies(detail::functor_test_env<functor>->ProxyStream());
-                    std::this_thread::sleep_for(std::chrono::microseconds(10));
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(detail::kHostPollSleepIntervalNs));
                 }
             });
         }

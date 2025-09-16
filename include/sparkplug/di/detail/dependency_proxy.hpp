@@ -10,12 +10,15 @@
 
 namespace sparkplug::di::detail {
 
-template<util::concepts::Dependency Dep, util::concepts::Callable Callable>
+template<typename Derived, util::concepts::Dependency Dep, util::concepts::Callable Callable>
 class DependencyProxy {
 public:
     using dependency = Dep;
     using callable = Callable;
-    static constexpr bool is_device_side = Dep::is_device_side;
+
+    void PopulateDevice(util::cuda::Stream& stream) {
+        static_cast<Derived*>(this)->PopulateDevice(stream);
+    }
 
     void SetDependency(Dep::type* dep) {
         host_dependency_ = dep;

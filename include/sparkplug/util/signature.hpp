@@ -16,7 +16,7 @@ struct Signature {
     using return_type = ReturnT;
 };
 
-template<util::concepts::Callable F>
+template<concepts::Callable F>
 class deduced_signature {
     template<typename ClassT, typename ReturnT, typename ArgT>
     static std::tuple<ReturnT, ArgT> deduce(ReturnT(ClassT::*)(ArgT) const);
@@ -30,7 +30,7 @@ public:
     using type = Signature<arg_type, return_type>;
 };
 
-template<util::concepts::Callable F>
+template<concepts::Callable F>
 using deduced_signature_t = deduced_signature<F>::type;
 
 }
