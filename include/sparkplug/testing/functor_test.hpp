@@ -12,6 +12,7 @@
 #include <chrono>
 
 #include <sparkplug/util/concepts/dependency.hpp>
+#include <sparkplug/util/concepts/specializable_with.hpp>
 #include <sparkplug/util/signature.hpp>
 
 #include "detail/functor_test_environment.hpp"
@@ -34,6 +35,9 @@ inline constexpr unsigned kHostPollSleepIntervalNs = 10'000u;
 
 template <template <typename...> typename FunctorTemplate, util::concepts::Dependency ... Deps>
 class FunctorTest : public ::testing::Test {
+    static_assert(util::concepts::TestableFunctorTemplate<FunctorTemplate, typename detail::proxy<Deps>::callable...>,
+        "Functor must be templated on its dependencies, and must be constructible with pointers to its dependencies.");
+
     using dependency_tuple = detail::DependencyTuple<Deps...>;
 
 public:

@@ -19,6 +19,7 @@ public:
     }
 
     template<typename ... Args>
+    requires std::constructible_from<T, Args...>
     explicit PinnedScalar(std::in_place_t, Args&& ... args) : PinnedScalar() {
         std::construct_at(h_scalar_, std::forward<Args>(args)...);
         is_emplaced_ = true;
@@ -46,6 +47,7 @@ public:
     }
 
     template<typename ... Args>
+    requires std::constructible_from<T, Args...>
     void emplace(Args&& ... args) {
         if (is_emplaced_) {
             std::destroy_at(h_scalar_);
