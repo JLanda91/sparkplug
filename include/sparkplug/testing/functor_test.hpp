@@ -12,6 +12,7 @@
 #include <chrono>
 
 #include <sparkplug/util/concepts/dependency.hpp>
+#include <sparkplug/util/concepts/specializable_with.hpp>
 #include <sparkplug/util/signature.hpp>
 
 #include "detail/functor_test_environment.hpp"
@@ -23,22 +24,20 @@ namespace sparkplug::testing {
 namespace detail {
 
 template <template <typename...> typename FunctorTemplate, typename Tuple, std::size_t... I>
-auto specialized_functor_impl(std::index_sequence<I...>) -> FunctorTemplate<typename std::tuple_element_t<I, Tuple>::callable...>;
+auto specialized_functor(std::index_sequence<I...>) -> FunctorTemplate<typename std::tuple_element_t<I, Tuple>::callable...>;
 
 template <template <typename...> typename FunctorTemplate, typename Tuple>
-using specialized_functor_t = decltype(specialized_functor_impl<FunctorTemplate, Tuple>(std::make_index_sequence<std::tuple_size_v<Tuple>>{}));
+using specialized_functor_t = decltype(specialized_functor<FunctorTemplate, Tuple>(std::make_index_sequence<std::tuple_size_v<Tuple>>{}));
 
-template <util::concepts::Callable Functor, typename Tuple>
-auto make_functor(const Tuple& proxies) {
-    return std::apply([](auto const&... elems) {
-        return Functor{elems.DevicePtr()...};
-    }, proxies);
-}
+inline constexpr unsigned kHostPollSleepIntervalNs = 10'000u;
 
 }
 
 template <template <typename...> typename FunctorTemplate, util::concepts::Dependency ... Deps>
 class FunctorTest : public ::testing::Test {
+    static_assert(util::concepts::TestableFunctorTemplate<FunctorTemplate, typename detail::proxy<Deps>::callable...>,
+        "Functor must be templated on its dependencies, and must be constructible with pointers to its dependencies.");
+
     using dependency_tuple = detail::DependencyTuple<Deps...>;
 
 public:
@@ -52,7 +51,11 @@ public:
     static void TearDownTestSuite() {
         delete detail::functor_test_env<functor>;
         detail::functor_test_env<functor> = nullptr;
-        cudaDeviceReset();
+        util::cuda::check_cuda_fn_error("Reset Device", cudaDeviceReset);
+    }
+
+    void TearDown() override {
+        detail::functor_test_env<functor>->ProxyStream().Synchronize();
     }
 
     void InjectDependencies(Deps::type* ... arg) {
@@ -73,14 +76,14 @@ public:
             throw std::runtime_error("Dependencies were not initialized with FunctorTest::InjectDependencies");
         }
 
-        dependencies_.PopulateDeviceProxies(detail::functor_test_env<functor>->TestDriverStream());
+        dependencies_.PopulateProxiesOnDevice(detail::functor_test_env<functor>->TestDriverStream());
 
         if constexpr (dependency_tuple::has_host_dependencies) {
             is_kernel_finished_.store(false);
             host_poller_ = std::thread([this] {
                 while(!is_kernel_finished_.load()) {
                     dependencies_.PollAndSyncHostProxies(detail::functor_test_env<functor>->ProxyStream());
-                    std::this_thread::sleep_for(std::chrono::microseconds(10));
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(detail::kHostPollSleepIntervalNs));
                 }
             });
         }

@@ -14,17 +14,15 @@
 namespace sparkplug::testing::detail {
     
 template<typename Proxy>
-void PollAndUpdateCallableWithHostReturnValue(Proxy& proxy, util::cuda::Stream& stream) {
-    if constexpr (!Proxy::is_device_side) {
-        proxy.PollAndUpdateCallableWithHostReturnValue(stream);
+void poll_and_update_proxy_with_host_return_value(Proxy& proxy, util::cuda::Stream& stream) {
+    if constexpr (!Proxy::dependency::is_device_side) {
+        proxy.PollAndUpdateWithHostReturnValue(stream);
     }
 }
 
 template<typename Proxy>
-void populate_device_proxy(Proxy& proxy, util::cuda::Stream& stream) {
-    if constexpr (Proxy::is_device_side) {
-        proxy.PopulateDevice(stream);
-    }
+void populate_proxy_on_device(Proxy& proxy, util::cuda::Stream& stream) {
+    proxy.PopulateDevice(stream);
 }
 
 template <util::concepts::Dependency Dependency>
@@ -43,13 +41,13 @@ public:
 
     void PollAndSyncHostProxies(util::cuda::Stream& stream) {
         std::apply([&stream](proxy<Deps>&... ts) {
-            ( (PollAndUpdateCallableWithHostReturnValue(ts, stream)), ...);
+            ( (poll_and_update_proxy_with_host_return_value(ts, stream)), ...);
         }, dependency_proxies);
     }
 
-    void PopulateDeviceProxies(util::cuda::Stream& stream) {
+    void PopulateProxiesOnDevice(util::cuda::Stream& stream) {
         std::apply([&stream](proxy<Deps>&... ts) {
-            ( (populate_device_proxy(ts, stream)), ...);
+            ( (populate_proxy_on_device(ts, stream)), ...);
         }, dependency_proxies);
     }
 
