@@ -1,0 +1,26 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "hidden": true,
+      "name": "env",
+      "cacheVariables": {
+        "VCPKG_MANIFEST_INSTALL": "ON"
+      },
+      "environment": {
+        "NVCOMPILERS": "/opt/nvidia/hpc_sdk/Linux_x86_64/25.3/compilers",
+        "VCPKG_ROOT": "/home/jasper/vcpkg"
+      }
+    },
+    {
+      "name": "gcc-debug",
+      "inherits": ["env", "base", "debug", "gcc"],
+      "displayName": "GCC Debug"
+    },
+    {
+      "name": "gcc-release",
+      "inherits": ["env", "base", "release", "gcc"],
+      "displayName": "GCC Release"
+    }
+  ]
+}
