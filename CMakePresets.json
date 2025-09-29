@@ -8,6 +8,17 @@
   "configurePresets": [
     {
       "hidden": true,
+      "name": "env",
+      "cacheVariables": {
+        "VCPKG_MANIFEST_INSTALL": "ON"
+      },
+      "environment": {
+        "NVCOMPILERS": "/usr/local/cuda",
+        "VCPKG_ROOT": "/opt/vcpkg"
+      }
+    },
+    {
+      "hidden": true,
       "name": "base",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}",
@@ -46,6 +57,16 @@
         "CMAKE_CXX_FLAGS_DEBUG": "-g -O0 -Wall -Wextra",
         "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG -Wall -Wextra -Werror"
       }
+    },
+    {
+      "name": "gcc-debug",
+      "inherits": ["env", "base", "debug", "gcc"],
+      "displayName": "GCC Debug"
+    },
+    {
+      "name": "gcc-release",
+      "inherits": ["env", "base", "release", "gcc"],
+      "displayName": "GCC Release"
     }
   ]
 }

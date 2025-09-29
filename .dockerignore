@@ -2,6 +2,3 @@ build/
 .idea/
 Testing/
 .git/
-**/Dockerfile*
-**/*.dockerfile
-CMakeUserPresets.json

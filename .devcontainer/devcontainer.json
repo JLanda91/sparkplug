@@ -1,0 +1,21 @@
+//https://containers.dev/implementors/json_reference/
+
+{
+  "name": "Sparkplug Dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/sparkplug",
+  "mounts": [
+    // Hide ./build on host and replace with a container volume
+    "type=volume,target=/sparkplug/build"
+  ],
+//  "customizations" : {
+//    "jetbrains" : {
+//      "workspaceFolder": "/sparkplug",
+//      "backend" : "CLion"
+//    }
+//  },
+  "runArgs": ["--gpus", "all"]
+}
