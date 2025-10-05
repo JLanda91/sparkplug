@@ -68,5 +68,28 @@
       "inherits": ["env", "base", "release", "gcc"],
       "displayName": "GCC Release"
     }
+  ],
+  "buildPresets": [
+    {
+      "name": "lib-release",
+      "configurePreset": "gcc-release",
+      "targets": [ "sparkplug" ]
+    },
+    {
+      "name": "all-examples",
+      "configurePreset": "gcc-release",
+      "targets": [ "all_examples" ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "all-examples",
+      "configurePreset": "gcc-release",
+      "filter": {
+        "include": {
+          "name": "^example_"
+        }
+      }
+    }
   ]
 }

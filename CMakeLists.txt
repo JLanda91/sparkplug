@@ -37,6 +37,8 @@ set_target_properties(sparkplug PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON
 )
 
+include(GoogleTest)
+enable_testing()
 add_subdirectory(examples)
 
 # ===== INSTALL RULES =====

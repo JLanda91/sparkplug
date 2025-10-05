@@ -4,9 +4,6 @@
 #
 
 
-include(GoogleTest)
-enable_testing()
-
 set_property(DIRECTORY PROPERTY ALL_EXAMPLES "")
 
 function(sparkplug_add_example name)

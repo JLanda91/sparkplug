@@ -27,58 +27,31 @@ Please see the [examples](#examples) below.
 ## Getting started
 
 ### Prerequisites
-To build and install Sparkplug and to try the examples, the following is required to be installed:
-- Have `vcpkg` installed.
-- Have the CUDA Toolkit or the HPC SDK installed as `nvcc` is required.
-- Have a version of `g++` installed with C++20 support.
+You can build Sparkplug locally or use the devcontainer. To build and install Sparkplug or to try the examples, the 
+following is required to be installed.
 
-The project has a `CMakePresets.json` with `gcc-(debug|release)` presets. They are marked as hidden as a user is
-encouraged to create a `CMakeUserPresets.json`, inherit from these, and to set/override:
-- `NVCOMPILERS` to specify the installation path of the CUDA Toolkit or the HPC SDK
-- `CMAKE_CUDA_ARCHITECTURES`: to specify the GPU architectures.
-- `VCPKG_MANIFEST_INSTALL`: to specify whether all dependencies are installed with every CMake reload. Should be `ON`
-  the first time.
-- `VCPKG_ROOT`: to specify the installation path of `vcpkg`.
+#### Local builds
+- `vcpkg`
+- CUDA Toolkit
+- `gcc`
 
-Example of a `CMakePresets.jon`:
-```json
-{
-  "version": 3,
-  "configurePresets": [
-    {
-      "name": "my-env",
-      "hidden": true,
-      "environment": {
-        "VCPKG_ROOT": "/home/myname/vcpkg",
-        "NVCOMPILERS": "/opt/nvidia/hpc_sdk/Linux_x86_64/25.3/compilers"
-      },
-      "cacheVariables": {
-        "CMAKE_CUDA_ARCHITECTURES": "86",
-        "VCPKG_MANIFEST_INSTALL": "OFF"
-      }
-    },
-    {
-      "name": "gcc-14-debug",
-      "inherits": ["gcc-debug", "my-env"],
-      "displayName": "GCC 14 Debug"
-    },
-    {
-      "name": "gcc-14-release",
-      "inherits": ["gcc-release", "my-env"],
-      "displayName": "GCC 14 Release"
-    }
-  ]
-}
-```
+For constraints on CUDA and gcc version please refer to the [constraints](#constraints).
+
+#### Devcontainer
+- Docker
+- [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 
 ### Building & Installing
-Build and install Sparkplug and the example test programs with the user preset from the previous step as follows:
+Build the Sparkplug library, run the example test programs and install the library as follows:
 
 ```shell
-cmake --preset=<preset>
-cmake --build ./build/<preset> --target=sparkplug
-sudo cmake --install ./build/<preset>
+cmake --preset=gcc-release
+cmake --build --preset=all-examples
+ctest --preset=all-examples
+sudo cmake --install ./build/gcc-release
 ```
+
+either locally or in the devcontainer.
 
 ## Examples
 
@@ -86,7 +59,7 @@ Below, some use-cases of Sparkplug are exhibited. Please refer to the `./example
 After building, an example test program can be run with:
 
 ```shell
-./build/<preset>/examples/example_<example_name>
+./build/gcc-release/examples/example_<example_name>
 ```
 
 ### Using host-side dependencies to white-box test device functors
@@ -219,6 +192,4 @@ As of now, only base CMake presets for `nvcc` and `gcc` flags are provided. More
 tested in the future, after which presets with other host compiler flags will be added.
 
 ## Compatability
-CUDA 12 is the first version with solid C++20 support. Please use a CUDA 12+ compiler.
-
-Tested with GCC 14 and CUDA 12.8.
+Compatible with CUDA 12.8 or higher and GCC 10 or higher

@@ -7,15 +7,8 @@
     "context": ".."
   },
   "workspaceFolder": "/sparkplug",
-  "mounts": [
-    // Hide ./build on host and replace with a container volume
-    "type=volume,target=/sparkplug/build"
+  "runArgs": [
+    "--gpus", "all"
   ],
-//  "customizations" : {
-//    "jetbrains" : {
-//      "workspaceFolder": "/sparkplug",
-//      "backend" : "CLion"
-//    }
-//  },
-  "runArgs": ["--gpus", "all"]
+  "overrideCommand": false
 }

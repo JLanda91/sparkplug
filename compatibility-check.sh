@@ -1,4 +1,5 @@
 #!/usr/bin/bash
+
 # build_all_dockerfiles.sh
 # Build all Dockerfile.* in the current directory
 # Does not stop on failure
@@ -52,7 +53,7 @@ for cuda_version in ${cuda_versions}; do
   elapsed_t=$(echo "$end_t - $start_t" | bc -l)
   echo "$elapsed_t seconds"
   if [[ $succeeded -gt 0 ]]; then
-      docker run --rm $image_name cat /sparkplug-compat/compatibility.txt
+      docker run --rm "$image_name" cat /sparkplug-compat/report.txt
       echo
   else
       echo "❌ Container failed to build"
