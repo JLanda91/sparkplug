@@ -2,53 +2,93 @@
   "version": 6,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 31,
+    "minor": 28,
     "patch": 0
   },
   "configurePresets": [
     {
-      "name": "base",
-      "displayName": "base",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
       "hidden": true,
-      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      "name": "env",
+      "cacheVariables": {
+        "VCPKG_MANIFEST_INSTALL": "ON"
+      },
+      "environment": {
+        "NVCOMPILERS": "/usr/local/cuda",
+        "VCPKG_ROOT": "/opt/vcpkg"
+      }
     },
     {
-      "name": "gcc",
-      "inherits": ["base"],
-      "displayName": "GCC",
       "hidden": true,
+      "name": "base",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
-        "CMAKE_CXX_EXTENSIONS": "OFF",
         "CMAKE_CUDA_COMPILER": "$env{NVCOMPILERS}/bin/nvcc",
-        "CMAKE_CUDA_HOST_COMPILER": "/usr/bin/g++"
+        "CMAKE_CUDA_ARCHITECTURES": "86",
+        "CMAKE_CUDA_FLAGS_DEBUG": "-G -O0 -g -Xcompiler=-rdynamic",
+        "CMAKE_CUDA_FLAGS_RELEASE": "-O3 --use_fast_math -dopt=on"
       },
       "environment": {
         "CUDACXX": "$env{NVCOMPILERS}/bin/nvcc"
       }
     },
     {
-      "name": "gcc-debug",
-      "displayName": "GCC Debug",
-      "inherits": ["gcc"],
       "hidden": true,
+      "name": "debug",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CXX_FLAGS": "-g -O0 -Wall -Wextra",
-        "CMAKE_CUDA_FLAGS": "-G -O0 -g -Xcompiler=-rdynamic"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
-      "name": "gcc-release",
-      "displayName": "GCC Release",
-      "inherits": ["gcc"],
       "hidden": true,
+      "name": "release",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_CXX_FLAGS": "-O3 -DNDEBUG -Wall -Wextra -Werror",
-        "CMAKE_CUDA_FLAGS": "-O3 --use_fast_math -dopt=on"
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "hidden": true,
+      "name": "gcc",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+        "CMAKE_CXX_EXTENSIONS": "OFF",
+        "CMAKE_CUDA_HOST_COMPILER": "/usr/bin/g++",
+        "CMAKE_CXX_FLAGS_DEBUG": "-g -O0 -Wall -Wextra",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG -Wall -Wextra -Werror"
+      }
+    },
+    {
+      "name": "gcc-debug",
+      "inherits": ["env", "base", "debug", "gcc"],
+      "displayName": "GCC Debug"
+    },
+    {
+      "name": "gcc-release",
+      "inherits": ["env", "base", "release", "gcc"],
+      "displayName": "GCC Release"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "lib-release",
+      "configurePreset": "gcc-release",
+      "targets": [ "sparkplug" ]
+    },
+    {
+      "name": "all-examples",
+      "configurePreset": "gcc-release",
+      "targets": [ "all_examples" ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "all-examples",
+      "configurePreset": "gcc-release",
+      "filter": {
+        "include": {
+          "name": "^example_"
+        }
       }
     }
   ]

@@ -1,0 +1,14 @@
+//https://containers.dev/implementors/json_reference/
+
+{
+  "name": "Sparkplug Dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/sparkplug",
+  "runArgs": [
+    "--gpus", "all"
+  ],
+  "overrideCommand": false
+}

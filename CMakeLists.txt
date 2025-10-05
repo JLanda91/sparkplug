@@ -4,7 +4,7 @@
 #
 
 
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.28)
 
 project(Sandbox LANGUAGES CXX CUDA)
 
@@ -37,6 +37,8 @@ set_target_properties(sparkplug PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON
 )
 
+include(GoogleTest)
+enable_testing()
 add_subdirectory(examples)
 
 # ===== INSTALL RULES =====
