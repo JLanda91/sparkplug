@@ -6,7 +6,7 @@
 
 cmake_minimum_required(VERSION 3.28)
 
-project(Sandbox LANGUAGES CXX CUDA)
+project(Sandbox LANGUAGES CXX CUDA VERSION 1.0.0)
 
 find_package(GTest CONFIG REQUIRED)
 

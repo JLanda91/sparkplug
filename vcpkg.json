@@ -1,5 +1,11 @@
 {
+  "name": "sparkplug",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
   "dependencies": [
     "gtest"
+  ],
+  "maintainers": [
+    "Jasper Landa <jasperlanda91+github@gmail.com>"
   ]
 }
